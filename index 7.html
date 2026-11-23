@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Sujal Films Stories — Studio ERP & Booking Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cinzel:wght@700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; color: #0f172a; -webkit-tap-highlight-color: transparent; }
+    .brand-font { font-family: 'Cinzel', serif; }
+    .card-surface { background: #ffffff; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04); }
+    .cal-day { min-height: 74px; transition: all 0.15s ease; }
+    .cal-day:hover { border-color: #4f46e5; background-color: #eef2ff; }
+    .cal-day.selected { border: 2px solid #4f46e5; background-color: #eef2ff; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP HYBRID LANGUAGE TOGGLE BAR -->
+  <div class="bg-slate-900 text-white px-4 py-2 text-xs flex items-center justify-between z-40 border-b border-slate-800">
+    <div class="flex items-center gap-2">
+      <span class="brand-font font-bold text-amber-400">Sujal Films Stories</span>
+      <span class="text-slate-400">| Studio ERP</span>
+    </div>
+    <button onclick="toggleAppLanguage()" id="langToggleBtn" class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 font-bold text-[11px] border border-amber-400/40">
+      🌐 EN | मराठी
+    </button>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 1. AUTH / LOGIN SCREEN                                    -->
+  <!-- ========================================================= -->
+  <div id="authScreen" class="flex-1 flex items-center justify-center p-4 bg-slate-100 hidden">
+    <div class="w-full max-w-md card-surface rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+      <div class="text-center space-y-2">
+        <div class="brand-logo-slot flex justify-center"></div>
+      </div>
+
+      <div id="loginFormBox" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1" data-i18n="lbl_login_id">Login ID (Owner / Team ID)</label>
+          <input type="text" id="loginUserId" placeholder="sujal or akash01" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:outline-none focus:border-indigo-600">
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-xs font-bold text-slate-700" data-i18n="lbl_password">Password</label>
+            <button type="button" onclick="toggleForgotBox(true)" class="text-[11px] font-semibold text-indigo-600 hover:underline" data-i18n="btn_forgot_pass">Forgot Password? (Owner)</button>
+          </div>
+          <input type="password" id="loginPassword" placeholder="••••" onkeydown="if(event.key==='Enter') handleLogin()" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-medium focus:outline-none focus:border-indigo-600">
+        </div>
+        <button onclick="handleLogin()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md" data-i18n="btn_sign_in">
+          Sign In / लॉगिन करा
+        </button>
+      </div>
+
+      <!-- Owner Password Reset -->
+      <div id="forgotPasswordBox" class="space-y-3 hidden">
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900" data-i18n="box_reset_notice">
+          <strong>Owner Password Reset:</strong> Only the owner can reset the master password.
+        </div>
+        <input type="password" id="masterRecoveryCode" placeholder="Master Recovery Code" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+        <input type="password" id="newOwnerPassInput" placeholder="New Owner Password" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+        <div class="flex gap-2">
+          <button onclick="toggleForgotBox(false)" class="flex-1 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs" data-i18n="btn_back">Back</button>
+          <button onclick="resetOwnerPassword()" class="flex-1 py-2 rounded-xl bg-amber-600 text-white font-bold text-xs" data-i18n="btn_reset">Reset</button>
+        </div>
+      </div>
+
+      <!-- Contact Bar -->
+      <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-2 text-xs">
+        <a href="tel:+919096622563" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-800 font-bold flex items-center gap-1"><i class="fas fa-phone-alt text-indigo-600"></i> 9096622563</a>
+        <a href="https://api.whatsapp.com/send?phone=919096622563" target="_blank" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 font-bold flex items-center gap-1"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+        <a href="https://www.instagram.com/sujal.filmstories?fqnt=MWZtb2Z0NHQyMmJ2ZQ%3D%3D&utm_source=qr" target="_blank" class="px-3 py-1.5 rounded-lg bg-pink-50 text-pink-700 font-bold flex items-center gap-1"><i class="fab fa-instagram"></i> Instagram</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 2. OWNER STUDIO WORKSPACE                                 -->
+  <!-- ========================================================= -->
+  <div id="studioWorkspace" class="flex-1 flex flex-col lg:flex-row hidden">
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 lg:top-9 bg-white border-r border-slate-200 z-30">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-center">
+        <div class="brand-logo-slot"></div>
+      </div>
+
+      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+        <button onclick="switchTab('calendar')" id="deskNav-calendar" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700">
+          <i class="fas fa-calendar-alt w-4 text-center"></i> <span data-i18n="nav_calendar">Date Calendar & Schedule</span>
+        </button>
+        <button onclick="switchTab('shoots')" id="deskNav-shoots" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          <i class="fas fa-wallet w-4 text-center"></i> <span data-i18n="nav_payments">Client Payments & Shillak</span>
+        </button>
+        <button onclick="switchTab('clients')" id="deskNav-clients" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          <i class="fas fa-address-book w-4 text-center"></i> <span data-i18n="nav_clients">Client Master Profiles</span>
+        </button>
+        <button onclick="switchTab('freelance')" id="deskNav-freelance" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          <i class="fas fa-camera-retro w-4 text-center"></i> <span data-i18n="nav_freelance">Freelance Shoots (इतर)</span>
+        </button>
+        <button onclick="switchTab('team')" id="deskNav-team" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          <i class="fas fa-users w-4 text-center"></i> <span data-i18n="nav_team">Team & Payment Hisab</span>
+        </button>
+        <button onclick="switchTab('settings')" id="deskNav-settings" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">
+          <i class="fas fa-cog w-4 text-center"></i> <span data-i18n="nav_settings">Master Settings & Backup</span>
+        </button>
+      </nav>
+
+      <div class="p-3 border-t border-slate-100 space-y-2">
+        <button onclick="logoutUser()" class="w-full py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs flex items-center justify-center gap-2">
+          <i class="fas fa-sign-out-alt"></i> <span data-i18n="btn_logout">Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 lg:pl-64 flex flex-col min-h-screen pb-20 lg:pb-8">
+      <header class="sticky top-9 lg:top-9 z-25 bg-white/95 backdrop-blur border-b border-slate-200 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-3">
+          <div class="lg:hidden brand-logo-slot"></div>
+          <h1 id="pageHeaderTitle" class="hidden sm:block text-sm font-extrabold text-slate-900">Date Calendar & Multi-Event Schedule</h1>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <a href="tel:+919096622563" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-bold flex items-center gap-1">
+            <i class="fas fa-phone-alt text-indigo-600"></i> <span class="hidden md:inline">9096622563</span>
+          </a>
+          <a href="https://api.whatsapp.com/send?phone=919096622563" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center gap-1">
+            <i class="fab fa-whatsapp"></i> <span class="hidden sm:inline">WhatsApp</span>
+          </a>
+          <a href="https://www.instagram.com/sujal.filmstories?fqnt=MWZtb2Z0NHQyMmJ2ZQ%3D%3D&utm_source=qr" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-pink-50 hover:bg-pink-100 text-pink-700 text-[11px] font-bold flex items-center gap-1">
+            <i class="fab fa-instagram"></i> <span class="hidden sm:inline">Instagram</span>
+          </a>
+          <button onclick="openBookingModal(null, 'CLIENT')" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1 shadow-sm">
+            <i class="fas fa-plus"></i> <span data-i18n="btn_book_date">Book Date</span>
+          </button>
+          <button onclick="logoutUser()" class="lg:hidden p-1.5 rounded-lg bg-rose-50 text-rose-600"><i class="fas fa-sign-out-alt text-xs"></i></button>
+        </div>
+      </header>
+
+      <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        <!-- KPI STRIP -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="card-surface rounded-2xl p-3.5">
+            <span class="text-[10px] font-bold uppercase text-slate-400" data-i18n="kpi_total_billed">Client Package Total</span>
+            <p id="kpiTotalBilled" class="text-lg sm:text-xl font-extrabold text-slate-900 mt-1">₹0</p>
+          </div>
+          <div class="card-surface rounded-2xl p-3.5">
+            <span class="text-[10px] font-bold uppercase text-emerald-600" data-i18n="kpi_total_paid">Client Paid (जमा)</span>
+            <p id="kpiTotalPaid" class="text-lg sm:text-xl font-extrabold text-emerald-600 mt-1">₹0</p>
+          </div>
+          <div class="card-surface rounded-2xl p-3.5">
+            <span class="text-[10px] font-bold uppercase text-rose-600" data-i18n="kpi_total_balance">Client Shillak (येणे)</span>
+            <p id="kpiTotalBalance" class="text-lg sm:text-xl font-extrabold text-rose-600 mt-1">₹0</p>
+          </div>
+          <div class="card-surface rounded-2xl p-3.5">
+            <span class="text-[10px] font-bold uppercase text-amber-600" data-i18n="kpi_team_due">Team Due (देणे)</span>
+            <p id="kpiTeamDue" class="text-lg sm:text-xl font-extrabold text-amber-600 mt-1">₹0</p>
+          </div>
+        </div>
+
+        <!-- TAB 1: CALENDAR -->
+        <section id="tab-calendar" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-7 card-surface rounded-2xl p-4 sm:p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <button onclick="changeCalMonth(-1)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"><i class="fas fa-chevron-left text-xs"></i></button>
+                <h3 id="calMonthTitle" class="text-sm sm:text-base font-extrabold text-slate-900 px-2">November 2026</h3>
+                <button onclick="changeCalMonth(1)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"><i class="fas fa-chevron-right text-xs"></i></button>
+              </div>
+              <div class="flex items-center gap-2 text-[10px] font-bold">
+                <span class="flex items-center gap-1 text-indigo-700"><span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Client Shoot</span>
+                <span class="flex items-center gap-1 text-purple-700"><span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span> Freelance</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-7 text-center text-[11px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
+              <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+          </div>
+
+          <div class="lg:col-span-5 card-surface rounded-2xl p-4 sm:p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <span class="text-[10px] font-bold uppercase text-indigo-600" data-i18n="lbl_selected_date">Selected Date Schedule</span>
+                <h3 id="selectedDateHeader" class="text-sm font-extrabold text-slate-900">-</h3>
+              </div>
+              <div class="flex gap-1.5">
+                <button onclick="openBookingModal(selectedCalDate, 'CLIENT')" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-bold">+ Shoot</button>
+                <button onclick="openBookingModal(selectedCalDate, 'FREELANCE')" class="px-2.5 py-1.5 rounded-lg bg-purple-600 text-white text-[11px] font-bold">+ Freelance</button>
+              </div>
+            </div>
+            <div id="dayScheduleList" class="space-y-3 max-h-[480px] overflow-y-auto pr-1"></div>
+          </div>
+        </section>
+
+        <!-- TAB 2: PAYMENTS -->
+        <section id="tab-shoots" class="space-y-4 hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-base font-extrabold text-slate-900" data-i18n="title_client_payments">Client Shoot Payments & Shillak Balance</h2>
+            <select id="shootFilterSelect" onchange="renderShootsList()" class="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700">
+              <option value="ALL">All Client Shoots</option>
+              <option value="DUE">Balance Due (बाकी)</option>
+              <option value="PAID">Fully Paid (पूर्ण)</option>
+            </select>
+          </div>
+          <div id="shootsListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+
+        <!-- TAB 3: CLIENT PROFILES -->
+        <section id="tab-clients" class="space-y-4 hidden">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-base font-extrabold text-slate-900" data-i18n="title_client_profiles">Client Master Profiles</h2>
+            <div class="flex gap-2">
+              <input type="text" id="clientSearchBox" onkeyup="renderClientsDirectory()" placeholder="Search name / phone..." class="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs">
+              <button onclick="openClientProfileModal()" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-xs">+ Add Client</button>
+            </div>
+          </div>
+          <div id="clientProfilesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+
+        <!-- TAB 4: FREELANCE -->
+        <section id="tab-freelance" class="space-y-4 hidden">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-extrabold text-slate-900" data-i18n="title_freelance">Freelance Shoots (इतर फोटोग्राफरचे शूट)</h2>
+            <button onclick="openBookingModal(selectedCalDate, 'FREELANCE')" class="px-3 py-1.5 rounded-xl bg-purple-600 text-white font-bold text-xs">+ Add Freelance</button>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="card-surface rounded-xl p-3"><span class="text-[10px] font-bold text-slate-400">Total Work</span><p id="flStatTotal" class="text-base font-extrabold text-slate-900">₹0</p></div>
+            <div class="card-surface rounded-xl p-3"><span class="text-[10px] font-bold text-emerald-600">Received</span><p id="flStatPaid" class="text-base font-extrabold text-emerald-600">₹0</p></div>
+            <div class="card-surface rounded-xl p-3"><span class="text-[10px] font-bold text-rose-600">Pending</span><p id="flStatDue" class="text-base font-extrabold text-rose-600">₹0</p></div>
+          </div>
+          <div id="freelanceShootsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </section>
+
+        <!-- TAB 5: TEAM -->
+        <section id="tab-team" class="grid grid-cols-1 lg:grid-cols-12 gap-6 hidden">
+          <div class="lg:col-span-5 card-surface rounded-2xl p-5 space-y-3 self-start">
+            <h3 class="text-sm font-extrabold text-slate-900" data-i18n="title_add_team">+ Add Team Member & Special ID</h3>
+            <p class="text-[11px] text-slate-500" data-i18n="desc_team">प्रत्येक Team Member साठी स्वतंत्र Login ID बनवा ज्यात त्यांना फक्त ड्युटी आणि हिशोब दिसेल.</p>
+            <input type="text" id="newTeamName" placeholder="Team Member Name (उदा. आकाश - Candid) *" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+            <input type="tel" id="newTeamPhone" placeholder="WhatsApp Number *" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="newTeamId" placeholder="Login ID (उदा. akash01) *" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+              <input type="text" id="newTeamPass" placeholder="Password (उदा. 1122) *" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+            </div>
+            <button onclick="addTeamAccount()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs">Create Team ID</button>
+          </div>
+          <div class="lg:col-span-7 space-y-3">
+            <h3 class="text-sm font-extrabold text-slate-900" data-i18n="title_team_hisab">Team Members & Payment Hisab</h3>
+            <div id="teamListBox" class="space-y-3"></div>
+          </div>
+        </section>
+
+        <!-- TAB 6: SETTINGS -->
+        <section id="tab-settings" class="space-y-6 hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card-surface rounded-2xl p-5 space-y-3">
+              <h3 class="text-sm font-extrabold text-slate-900"><i class="fas fa-lock text-amber-500 mr-1"></i> Master UPI & Brand Logo Settings</h3>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Studio UPI ID (Default: 9096622563@fam)</label>
+                <input type="text" id="studioUpiInput" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Security PIN (Default: 1234)</label>
+                <input type="password" id="settingsPinInput" placeholder="Enter PIN to Save" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+              </div>
+              <button onclick="saveStudioSettings()" class="w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs">Verify PIN & Save UPI</button>
+              <div class="pt-3 border-t border-slate-100 space-y-2">
+                <label class="block text-xs font-bold text-slate-700">Upload Studio Brand Logo (PNG)</label>
+                <input type="file" accept="image/png,image/*" onchange="handleBrandLogoUpload(event)" class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:text-indigo-700 file:font-bold">
+                <button id="btnClearLogo" onclick="clearBrandLogo()" class="hidden px-3 py-1.5 rounded-lg bg-rose-50 text-rose-600 text-xs font-bold">Remove Logo</button>
+              </div>
+            </div>
+
+            <div class="card-surface rounded-2xl p-5 space-y-3">
+              <h3 class="text-sm font-extrabold text-slate-900"><i class="fas fa-database text-indigo-600 mr-1"></i> Data Storage, Backup & Cloud Sync</h3>
+              <p class="text-[11px] text-slate-500">तुमचा डेटा ब्राउझरमध्ये (<code class="bg-slate-100 px-1 rounded">sfs_config</code>, <code class="bg-slate-100 px-1 rounded">sfs_clients</code>, <code class="bg-slate-100 px-1 rounded">sfs_invoices</code>) सेव्ह राहतो.</p>
+              <div class="flex gap-2">
+                <button onclick="downloadBackupJson()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs"><i class="fas fa-download mr-1"></i> Export Backup</button>
+                <label class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-800 font-bold text-xs text-center cursor-pointer"><i class="fas fa-upload mr-1"></i> Import Backup
+                  <input type="file" accept=".json" onchange="restoreBackupJson(event)" class="hidden">
+                </label>
+              </div>
+              <div class="pt-3 border-t border-slate-100 space-y-2">
+                <label class="block text-xs font-bold text-slate-700">Firebase Cloud Sync (Optional)</label>
+                <input type="text" id="fbApiKeyInput" placeholder="Firebase API Key" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+                <input type="text" id="fbProjectIdInput" placeholder="Firebase Project ID" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+                <button onclick="saveFirebaseConfig()" class="w-full py-2 rounded-xl bg-indigo-600 text-white font-bold text-xs">Connect Cloud Sync</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- MOBILE BOTTOM NAV -->
+    <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-30 grid grid-cols-6 py-1.5 px-1">
+      <button onclick="switchTab('calendar')" id="mobNav-calendar" class="mob-nav-btn flex flex-col items-center text-indigo-600"><i class="fas fa-calendar-alt text-xs"></i><span class="text-[9px] font-bold mt-0.5">Calendar</span></button>
+      <button onclick="switchTab('shoots')" id="mobNav-shoots" class="mob-nav-btn flex flex-col items-center text-slate-500"><i class="fas fa-wallet text-xs"></i><span class="text-[9px] font-semibold mt-0.5">Payments</span></button>
+      <button onclick="switchTab('clients')" id="mobNav-clients" class="mob-nav-btn flex flex-col items-center text-slate-500"><i class="fas fa-address-book text-xs"></i><span class="text-[9px] font-semibold mt-0.5">Clients</span></button>
+      <button onclick="switchTab('freelance')" id="mobNav-freelance" class="mob-nav-btn flex flex-col items-center text-slate-500"><i class="fas fa-camera-retro text-xs"></i><span class="text-[9px] font-semibold mt-0.5">Freelance</span></button>
+      <button onclick="switchTab('team')" id="mobNav-team" class="mob-nav-btn flex flex-col items-center text-slate-500"><i class="fas fa-users text-xs"></i><span class="text-[9px] font-semibold mt-0.5">Team</span></button>
+      <button onclick="switchTab('settings')" id="mobNav-settings" class="mob-nav-btn flex flex-col items-center text-slate-500"><i class="fas fa-cog text-xs"></i><span class="text-[9px] font-semibold mt-0.5">Settings</span></button>
+    </nav>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 3. TEAM MEMBER PORTAL                                     -->
+  <!-- ========================================================= -->
+  <div id="teamWorkspace" class="min-h-screen bg-slate-50 flex flex-col hidden">
+    <header class="bg-white border-b border-slate-200 px-4 sm:px-8 py-3 flex flex-wrap items-center justify-between gap-2 sticky top-0 z-20">
+      <div class="flex items-center gap-3">
+        <div class="brand-logo-slot"></div>
+        <div>
+          <span class="text-[10px] font-bold uppercase text-indigo-600 block">Team Member Portal</span>
+          <h1 id="tpMemberGreeting" class="text-sm font-extrabold text-slate-900">Welcome</h1>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="tel:+919096622563" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-800 text-[11px] font-bold"><i class="fas fa-phone-alt text-indigo-600"></i> 9096622563</a>
+        <a href="https://api.whatsapp.com/send?phone=919096622563" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-bold"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+        <button onclick="logoutUser()" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 font-bold text-xs">Logout</button>
+      </div>
+    </header>
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="card-surface rounded-2xl p-4"><span class="text-[10px] font-bold text-slate-400 uppercase">Total Earned</span><p id="tpTotalEarned" class="text-lg sm:text-2xl font-extrabold text-slate-900 mt-1">₹0</p></div>
+        <div class="card-surface rounded-2xl p-4"><span class="text-[10px] font-bold text-emerald-600 uppercase">Paid to You</span><p id="tpTotalPaid" class="text-lg sm:text-2xl font-extrabold text-emerald-600 mt-1">₹0</p></div>
+        <div class="card-surface rounded-2xl p-4"><span class="text-[10px] font-bold text-rose-600 uppercase">Balance Due</span><p id="tpTotalDue" class="text-lg sm:text-2xl font-extrabold text-rose-600 mt-1">₹0</p></div>
+      </div>
+      <div class="space-y-3">
+        <h2 class="text-sm font-extrabold text-slate-900">My Shoot Dates, Timings & Payment Hisab</h2>
+        <div id="tpScheduleCards" class="space-y-3"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- 4. CLEAN CLIENT PAYMENT PORTAL                            -->
+  <!-- ========================================================= -->
+  <div id="clientPayPortal" class="min-h-screen bg-slate-100 flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-md card-surface rounded-3xl overflow-hidden shadow-xl">
+      <div class="bg-slate-900 text-white p-5 text-center space-y-2">
+        <div class="brand-logo-slot flex justify-center"></div>
+        <span class="inline-block px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider">Official Payment Link</span>
+      </div>
+      <div class="p-5 sm:p-6 space-y-5">
+        <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 text-center space-y-1">
+          <span class="text-[11px] font-bold uppercase text-indigo-700"><i class="fas fa-lock mr-1"></i> Fixed Remaining Balance (शिल्लक)</span>
+          <div id="cpAmountDisplay" class="text-4xl font-black text-slate-900">₹0</div>
+          <p class="text-xs text-slate-600 pt-1">Client: <strong id="cpClientDisplay" class="text-slate-900">-</strong></p>
+          <p class="text-[11px] text-slate-500">Shoot: <strong id="cpProjectDisplay" class="text-slate-800">-</strong></p>
+        </div>
+        <div class="space-y-2.5">
+          <button onclick="launchDirectUpi('generic')" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm shadow-lg flex items-center justify-center gap-2">
+            <i class="fas fa-bolt"></i> Pay Exact Amount via UPI
+          </button>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="launchDirectUpi('phonepe')" class="py-3 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-900 font-bold text-xs flex flex-col items-center gap-1"><i class="fas fa-mobile-alt text-purple-600 text-base"></i> PhonePe</button>
+            <button onclick="launchDirectUpi('gpay')" class="py-3 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-900 font-bold text-xs flex flex-col items-center gap-1"><i class="fab fa-google-pay text-sky-600 text-xl"></i> GPay</button>
+            <button onclick="launchDirectUpi('paytm')" class="py-3 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 font-bold text-xs flex flex-col items-center gap-1"><i class="fas fa-wallet text-blue-600 text-base"></i> Paytm</button>
+          </div>
+        </div>
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center space-y-2">
+          <p class="text-xs font-bold text-slate-700">Or Scan UPI QR Code</p>
+          <img id="cpQrImg" src="" alt="QR Code" class="w-40 h-40 mx-auto bg-white p-2 rounded-xl border border-slate-200" />
+        </div>
+        <div class="pt-3 border-t border-slate-100 text-center space-y-2">
+          <p class="text-[11px] font-bold text-slate-500">Need Help? Contact Studio Directly:</p>
+          <div class="flex items-center justify-center gap-2 text-xs">
+            <a href="tel:+919096622563" class="px-3 py-2 rounded-xl bg-slate-900 text-white font-bold flex items-center gap-1.5"><i class="fas fa-phone-alt"></i> Call 9096622563</a>
+            <a href="https://api.whatsapp.com/send?phone=919096622563" target="_blank" class="px-3 py-2 rounded-xl bg-emerald-600 text-white font-bold flex items-center gap-1.5"><i class="fab fa-whatsapp"></i> WhatsApp</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+  <div id="modalBooking" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden overflow-y-auto">
+    <div class="bg-white w-full max-w-lg rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 my-6">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="modalBookingTitle" class="text-base font-extrabold text-slate-900">Book Date & Event Schedule</h3>
+        <button onclick="closeModal('modalBooking')" class="text-slate-400 hover:text-slate-700"><i class="fas fa-times"></i></button>
+      </div>
+      <input type="hidden" id="editBookingId" value="" />
+      <input type="hidden" id="bookingModeInput" value="CLIENT" />
+      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+        <button type="button" id="modeBtnClient" onclick="setBookingMode('CLIENT')" class="py-2 rounded-lg text-xs font-extrabold bg-indigo-600 text-white">📸 Client Shoot</button>
+        <button type="button" id="modeBtnFreelance" onclick="setBookingMode('FREELANCE')" class="py-2 rounded-lg text-xs font-extrabold text-slate-600">🎥 Freelance Shoot</button>
+      </div>
+      <div id="clientModeFields" class="space-y-3">
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-slate-700">Client *</label>
+            <button type="button" onclick="toggleNewClientInline()" id="btnNewClientInline" class="text-[11px] font-bold text-indigo-600 hover:underline">+ New Client</button>
+          </div>
+          <select id="bkClientSelect" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold"></select>
+          <div id="newClientInlineBox" class="hidden space-y-2 pt-2 border-t border-slate-200">
+            <input type="text" id="bkNewClientName" placeholder="नवीन क्लायंटचे नाव *" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="tel" id="bkNewClientPhone" placeholder="WhatsApp Number *" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs">
+              <input type="text" id="bkNewClientCity" placeholder="City" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs">
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Work Details & Output *</label>
+          <textarea id="bkOutputDetails" rows="2" placeholder="Candid Photography + Traditional Video" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"></textarea>
+        </div>
+      </div>
+      <div id="freelanceModeFields" class="space-y-3 hidden">
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="block text-xs font-bold text-slate-700 mb-1">Studio *</label><input type="text" id="flStudioName" placeholder="Royal Studio" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"></div>
+          <div><label class="block text-xs font-bold text-slate-700 mb-1">Phone</label><input type="tel" id="flStudioPhone" placeholder="9876543210" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"></div>
+        </div>
+        <div><label class="block text-xs font-bold text-slate-700 mb-1">Your Role *</label><input type="text" id="flRoleDesc" placeholder="Candid / Drone" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="block text-xs font-bold text-slate-700 mb-1">Date *</label><input type="date" id="bkEventDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold"></div>
+        <div><label class="block text-xs font-bold text-slate-700 mb-1">Timing *</label><input type="text" id="bkEventTime" placeholder="07:00 AM - 01:00 PM" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"></div>
+      </div>
+      <div><label class="block text-xs font-bold text-slate-700 mb-1">Venue & Title *</label><input type="text" id="bkEventVenue" placeholder="Haldi Ceremony — Tulsi Lawn" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs"></div>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="block text-xs font-bold text-slate-700 mb-1">Total Amount (₹) *</label><input type="number" id="bkTotalAmount" placeholder="45000" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-extrabold"></div>
+        <div id="advanceInputWrapper"><label class="block text-xs font-bold text-emerald-700 mb-1">Advance Paid (₹)</label><input type="number" id="bkAdvanceAmount" value="0" class="w-full px-3 py-2 bg-emerald-50/50 border border-emerald-300 rounded-xl text-xs font-bold"></div>
+      </div>
+      <div class="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3 space-y-2">
+        <span class="text-xs font-bold text-indigo-900 block"><i class="fas fa-users text-indigo-600 mr-1"></i> Assign Team Members</span>
+        <div id="multiTeamChecklist" class="space-y-2 max-h-36 overflow-y-auto pr-1"></div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeModal('modalBooking')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs">Cancel</button>
+        <button onclick="saveBookingEvent()" class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs">Save Shoot & Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalAddPayment" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="text-sm font-extrabold text-slate-900">जमा रक्कम नोंदवा (Add Payment)</h3>
+        <button onclick="closeModal('modalAddPayment')" class="text-slate-400"><i class="fas fa-times"></i></button>
+      </div>
+      <input type="hidden" id="payTargetId" />
+      <p class="text-xs font-bold text-slate-700" id="payModalTitle">-</p>
+      <p class="text-xs text-rose-600 font-bold">Remaining Shillak: <span id="payModalRemaining">₹0</span></p>
+      <input type="number" id="payNewAmount" placeholder="Amount ₹" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-extrabold">
+      <button onclick="confirmInstallmentPayment()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs">Save Payment</button>
+    </div>
+  </div>
+
+  <div id="modalPayTeam" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="text-sm font-extrabold text-slate-900">Pay Team Member</h3>
+        <button onclick="closeModal('modalPayTeam')" class="text-slate-400"><i class="fas fa-times"></i></button>
+      </div>
+      <input type="hidden" id="ptMemberId" />
+      <p class="text-xs text-slate-600">Paying to: <strong id="ptMemberName" class="text-slate-900">-</strong></p>
+      <input type="number" id="ptAmountInput" placeholder="Amount ₹" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-extrabold">
+      <input type="text" id="ptNoteInput" placeholder="Note / Reference" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+      <button onclick="saveTeamPayout()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs">Record Payout</button>
+    </div>
+  </div>
+
+  <div id="modalClientProfile" class="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="text-sm font-extrabold text-slate-900">Client Profile</h3>
+        <button onclick="closeModal('modalClientProfile')" class="text-slate-400"><i class="fas fa-times"></i></button>
+      </div>
+      <input type="hidden" id="cpEditId" />
+      <input type="text" id="cpNameInput" placeholder="Client Name *" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+      <input type="tel" id="cpPhoneInput" placeholder="WhatsApp Number *" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+      <input type="text" id="cpCityInput" placeholder="City" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+      <button onclick="saveClientProfile()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs">Save Client</button>
+    </div>
+  </div>
+
+  <script>
+    const TODAY_STR = new Date().toISOString().split('T')[0];
+
+    let currentLang = localStorage.getItem('sfs_lang') || 'EN';
+
+    const i18n = {
+      EN: {
+        nav_calendar: "Date Calendar & Schedule",
+        nav_payments: "Client Payments & Shillak",
+        nav_clients: "Client Master Profiles",
+        nav_freelance: "Freelance Shoots (इतर)",
+        nav_team: "Team & Payment Hisab",
+        nav_settings: "Master Settings & Backup",
+        btn_logout: "Logout",
+        btn_book_date: "Book Date",
+        kpi_total_billed: "Client Package Total",
+        kpi_total_paid: "Client Paid (जमा)",
+        kpi_total_balance: "Client Shillak (येणे)",
+        kpi_team_due: "Team Due (देणे)",
+        lbl_selected_date: "Selected Date Schedule",
+        title_client_payments: "Client Shoot Payments & Shillak Balance",
+        title_client_profiles: "Client Master Profiles",
+        title_freelance: "Freelance Shoots (दुसऱ्या फोटोग्राफरचे शूट)",
+        title_add_team: "+ Add Team Member & Special ID",
+        desc_team: "प्रत्येक Team Member साठी स्वतंत्र Login ID बनवा.",
+        title_team_hisab: "Team Members & Payment Hisab",
+        lbl_login_id: "Login ID (Owner / Team ID)",
+        lbl_password: "Password",
+        btn_forgot_pass: "Forgot Password? (Owner)",
+        btn_sign_in: "Sign In / लॉगिन करा",
+        box_reset_notice: "Owner Password Reset: Only owner can reset master password.",
+        btn_back: "Back",
+        btn_reset: "Reset"
+      },
+      MR: {
+        nav_calendar: "कॅलेंडर आणि इव्हेंट शेड्युल",
+        nav_payments: "क्लायंट पेमेंट आणि शिल्लक",
+        nav_clients: "क्लायंट प्रोफाइल्स",
+        nav_freelance: "फ्रीलान्स शूट्स",
+        nav_team: "टीम आणि पेमेंट हिशोब",
+        nav_settings: "सेटिंग्ज आणि बॅकअप",
+        btn_logout: "लॉगआउट",
+        btn_book_date: "शूट बुक करा",
+        kpi_total_billed: "एकूण पॅकेज (Total Billed)",
+        kpi_total_paid: "जमा रक्कम (Paid)",
+        kpi_total_balance: "शिल्लक येणे (Due Balance)",
+        kpi_team_due: "टीम देणे (Team Due)",
+        lbl_selected_date: "निवडलेल्या तारखेचे शेड्युल",
+        title_client_payments: "क्लायंट पेमेंट आणि शिल्लक लेजर",
+        title_client_profiles: "क्लायंट मास्टर प्रोफाइल्स",
+        title_freelance: "फ्रीलान्स शूट्स (इतर स्टुडिओ)",
+        title_add_team: "+ नवीन टीम मेंबर जोडा",
+        desc_team: "प्रत्येक Team Member साठी स्वतंत्र Login ID बनवा.",
+        title_team_hisab: "टीम मेंबर आणि पेमेंट हिशोब",
+        lbl_login_id: "लॉगिन आयडी (Owner / Team ID)",
+        lbl_password: "पासवर्ड",
+        btn_forgot_pass: "पासवर्ड विसरलात?",
+        btn_sign_in: "लॉगिन करा",
+        box_reset_notice: "पासवर्ड रिसेट: फक्त मालक पासवर्ड बदलू शकतो.",
+        btn_back: "मागे",
+        btn_reset: "रिसेट"
+      }
+    };
+
+    function toggleAppLanguage() {
+      currentLang = currentLang === 'EN' ? 'MR' : 'EN';
+      localStorage.setItem('sfs_lang', currentLang);
+      applyLanguage();
+    }
+
+    function applyLanguage() {
+      const dict = i18n[currentLang];
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.textContent = dict[key];
+      });
+      document.getElementById('langToggleBtn').textContent = currentLang === 'EN' ? '🌐 EN | मराठी' : '🌐 मराठी | EN';
+    }
+
+    let sfsConfig = JSON.parse(localStorage.getItem('sfs_config')) || {
+      owner: { id: 'sujal', pass: '1234', recoveryCode: 'SUJAL9096' },
+      upiId: '9096622563@fam',
+      pin: '1234',
+      logoDataUrl: '',
+      firebase: { apiKey: '', projectId: '' }
+    };
+
+    let sfsClients = JSON.parse(localStorage.getItem('sfs_clients')) || [
+      { id: 'CLI-101', name: 'रोहन आणि स्नेहा पाटील', phone: '9096622563', city: 'Nanded' },
+      { id: 'CLI-102', name: 'अमित देशमुख (Wedding)', phone: '9876543210', city: 'Pune' }
+    ];
+
+    let sfsTeam = JSON.parse(localStorage.getItem('sfs_team')) || [
+      { id: 'akash01', pass: '1122', name: 'आकाश (Candid Photographer)', phone: '9123456780' },
+      { id: 'rohit02', pass: '2233', name: 'रोहित (Cinematographer)', phone: '9988776655' }
+    ];
+
+    let sfsTeamPayouts = JSON.parse(localStorage.getItem('sfs_team_payouts')) || [
+      { id: 'TP-1', memberId: 'akash01', amount: 2000, date: TODAY_STR, note: 'Advance Payout' }
+    ];
+
+    let sfsInvoices = JSON.parse(localStorage.getItem('sfs_invoices')) || [
+      {
+        id: 'BK-1001',
+        type: 'CLIENT',
+        clientId: 'CLI-101',
+        date: TODAY_STR,
+        time: '07:00 AM - 01:00 PM',
+        venue: 'Morning Haldi Ceremony — Hotel Tulsi Lawn',
+        output: 'Candid Photography + Traditional Video + 4K Reels',
+        totalAmount: 35000,
+        payments: [{ amount: 15000, date: TODAY_STR, mode: 'UPI / PhonePe' }],
+        crew: [
+          { memberId: 'akash01', fee: 3500 },
+          { memberId: 'rohit02', fee: 3000 }
+        ]
+      }
+    ];
+
+    let currentSession = JSON.parse(sessionStorage.getItem('sfs_session')) || { role: 'OWNER', id: 'sujal', name: 'Sujal More' };
+    let currentCalYear = new Date().getFullYear();
+    let currentCalMonth = new Date().getMonth();
+    let selectedCalDate = TODAY_STR;
+    let dbFirestore = null;
+
+    function persistAll() {
+      localStorage.setItem('sfs_config', JSON.stringify(sfsConfig));
+      localStorage.setItem('sfs_clients', JSON.stringify(sfsClients));
+      localStorage.setItem('sfs_invoices', JSON.stringify(sfsInvoices));
+      localStorage.setItem('sfs_team', JSON.stringify(sfsTeam));
+      localStorage.setItem('sfs_team_payouts', JSON.stringify(sfsTeamPayouts));
+
+      if (dbFirestore) {
+        dbFirestore.collection('sujal_studio').doc('erp_data').set({
+          sfsConfig, sfsClients, sfsInvoices, sfsTeam, sfsTeamPayouts
+        }).catch(() => {});
+      }
+    }
+
+    function renderBrandLogoSlots() {
+      const slots = document.querySelectorAll('.brand-logo-slot');
+      const clearBtn = document.getElementById('btnClearLogo');
+      if (sfsConfig.logoDataUrl) {
+        if (clearBtn) clearBtn.classList.remove('hidden');
+        slots.forEach(el => {
+          el.innerHTML = `<img src="${sfsConfig.logoDataUrl}" alt="Sujal Films Stories" class="h-12 sm:h-14 w-auto object-contain mx-auto" />`;
+        });
+      } else {
+        if (clearBtn) clearBtn.classList.add('hidden');
+        slots.forEach(el => {
+          el.innerHTML = `<div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 text-amber-400 brand-font text-xs sm:text-sm font-extrabold tracking-wider"><i class="fas fa-film"></i> SUJAL FILMS STORIES</div>`;
+        });
+      }
+    }
+
+    function handleBrandLogoUpload(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        sfsConfig.logoDataUrl = e.target.result;
+        persistAll();
+        renderBrandLogoSlots();
+        alert('Brand Logo Saved Successfully!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearBrandLogo() {
+      sfsConfig.logoDataUrl = '';
+      persistAll();
+      renderBrandLogoSlots();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderBrandLogoSlots();
+      applyLanguage();
+      routeApp();
+      window.addEventListener('hashchange', routeApp);
+    });
+
+    function routeApp() {
+      const hash = window.location.hash;
+      if (hash.startsWith('#pay')) {
+        showScreen('clientPayPortal');
+        const params = new URLSearchParams(hash.split('?')[1] || '');
+        const amt = parseFloat(params.get('amt')) || 0;
+        const client = decodeURIComponent(params.get('to') || 'Valued Client');
+        const proj = decodeURIComponent(params.get('desc') || 'Photography & Film Shoot');
+        const id = params.get('id') || 'SFS-PAY';
+
+        document.getElementById('cpAmountDisplay').textContent = '₹' + amt.toLocaleString('en-IN');
+        document.getElementById('cpClientDisplay').textContent = client;
+        document.getElementById('cpProjectDisplay').textContent = proj;
+
+        const upiUri = `upi://pay?pa=${sfsConfig.upiId}&pn=Sujal%20Films%20Stories&am=${amt.toFixed(2)}&cu=INR&tn=${encodeURIComponent(id)}`;
+        window.activeUpiData = { amt: amt.toFixed(2), id };
+        document.getElementById('cpQrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUri)}`;
+        return;
+      }
+
+      if (hash.startsWith('#team')) {
+        const params = new URLSearchParams(hash.split('?')[1] || '');
+        const tId = params.get('id');
+        const member = sfsTeam.find(w => w.id === tId);
+        if (member) {
+          currentSession = { role: 'TEAM', id: member.id, name: member.name };
+          sessionStorage.setItem('sfs_session', JSON.stringify(currentSession));
+        }
+      }
+
+      if (!currentSession) {
+        showScreen('authScreen');
+      } else if (currentSession.role === 'TEAM') {
+        showScreen('teamWorkspace');
+        renderTeamPortal();
+      } else {
+        showScreen('studioWorkspace');
+        refreshActiveView();
+      }
+    }
+
+    function showScreen(screenId) {
+      ['authScreen', 'studioWorkspace', 'teamWorkspace', 'clientPayPortal'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(screenId).classList.remove('hidden');
+      renderBrandLogoSlots();
+    }
+
+    function handleLogin() {
+      const uid = document.getElementById('loginUserId').value.trim();
+      const pass = document.getElementById('loginPassword').value.trim();
+
+      if (uid.toLowerCase() === sfsConfig.owner.id.toLowerCase() && pass === sfsConfig.owner.pass) {
+        currentSession = { role: 'OWNER', id: sfsConfig.owner.id, name: 'Sujal More' };
+        sessionStorage.setItem('sfs_session', JSON.stringify(currentSession));
+        window.location.hash = '';
+        routeApp();
+        return;
+      }
+
+      const member = sfsTeam.find(w => w.id.toLowerCase() === uid.toLowerCase() && w.pass === pass);
+      if (member) {
+        currentSession = { role: 'TEAM', id: member.id, name: member.name };
+        sessionStorage.setItem('sfs_session', JSON.stringify(currentSession));
+        routeApp();
+        return;
+      }
+      alert('चुकीचा Login ID किंवा Password!');
+    }
+
+    function logoutUser() {
+      currentSession = null;
+      sessionStorage.removeItem('sfs_session');
+      window.location.hash = '';
+      showScreen('authScreen');
+    }
+
+    function toggleForgotBox(show) {
+      document.getElementById('loginFormBox').classList.toggle('hidden', show);
+      document.getElementById('forgotPasswordBox').classList.toggle('hidden', !show);
+    }
+
+    function resetOwnerPassword() {
+      const code = document.getElementById('masterRecoveryCode').value.trim();
+      const newPass = document.getElementById('newOwnerPassInput').value.trim();
+      if (code !== sfsConfig.owner.recoveryCode) { alert('Invalid Master Recovery Code!'); return; }
+      if (newPass.length < 4) { alert('किमान ४ अंकी पासवर्ड टाका.'); return; }
+      sfsConfig.owner.pass = newPass;
+      persistAll();
+      alert('Owner Password बदलला गेला!');
+      toggleForgotBox(false);
+    }
+
+    function switchTab(tabName) {
+      ['calendar', 'shoots', 'clients', 'freelance', 'team', 'settings'].forEach(t => {
+        document.getElementById('tab-' + t).classList.add('hidden');
+        const dBtn = document.getElementById('deskNav-' + t);
+        if (dBtn) dBtn.className = 'nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50';
+        const mBtn = document.getElementById('mobNav-' + t);
+        if (mBtn) mBtn.className = 'mob-nav-btn flex flex-col items-center text-slate-500';
+      });
+
+      document.getElementById('tab-' + tabName).classList.remove('hidden');
+      const activeDesk = document.getElementById('deskNav-' + tabName);
+      if (activeDesk) activeDesk.className = 'nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700';
+      const activeMob = document.getElementById('mobNav-' + tabName);
+      if (activeMob) activeMob.className = 'mob-nav-btn flex flex-col items-center text-indigo-600';
+
+      refreshActiveView();
+    }
+
+    function refreshActiveView() {
+      updateKpis();
+      renderCalendar();
+      renderDaySchedule();
+      renderShootsList();
+      renderClientsDirectory();
+      renderFreelanceList();
+      renderTeamTab();
+      document.getElementById('studioUpiInput').value = sfsConfig.upiId || '';
+    }
+
+    function updateKpis() {
+      const clientShoots = sfsInvoices.filter(b => b.type === 'CLIENT');
+      const billed = clientShoots.reduce((s, b) => s + Number(b.totalAmount), 0);
+      const paid = clientShoots.reduce((s, b) => s + b.payments.reduce((ps, p) => ps + Number(p.amount), 0), 0);
+
+      let teamEarned = 0;
+      sfsInvoices.forEach(b => { (b.crew || []).forEach(c => { teamEarned += Number(c.fee || 0); }); });
+      const teamPaid = sfsTeamPayouts.reduce((s, p) => s + Number(p.amount), 0);
+
+      document.getElementById('kpiTotalBilled').textContent = '₹' + billed.toLocaleString('en-IN');
+      document.getElementById('kpiTotalPaid').textContent = '₹' + paid.toLocaleString('en-IN');
+      document.getElementById('kpiTotalBalance').textContent = '₹' + Math.max(0, billed - paid).toLocaleString('en-IN');
+      document.getElementById('kpiTeamDue').textContent = '₹' + Math.max(0, teamEarned - teamPaid).toLocaleString('en-IN');
+    }
+
+    function changeCalMonth(delta) {
+      currentCalMonth += delta;
+      if (currentCalMonth > 11) { currentCalMonth = 0; currentCalYear++; }
+      if (currentCalMonth < 0) { currentCalMonth = 11; currentCalYear--; }
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const monthName = new Date(currentCalYear, currentCalMonth, 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+      document.getElementById('calMonthTitle').textContent = monthName;
+
+      const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+      const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+
+      grid.innerHTML = '';
+      for (let i = 0; i < firstDay; i++) grid.innerHTML += '<div class="p-1"></div>';
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${currentCalYear}-${String(currentCalMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayEvents = sfsInvoices.filter(b => b.date === dateStr);
+        const isSelected = dateStr === selectedCalDate;
+
+        let badgesHtml = dayEvents.slice(0, 2).map(ev => {
+          const color = ev.type === 'FREELANCE' ? 'bg-purple-600 text-white' : 'bg-indigo-600 text-white';
+          const label = ev.type === 'FREELANCE' ? (ev.studioName || 'Freelance') : (getClientName(ev.clientId).split(' ')[0]);
+          return `<div class="text-[9px] font-bold px-1 py-0.5 rounded truncate ${color}">${label}</div>`;
+        }).join('');
+
+        if (dayEvents.length > 2) badgesHtml += `<div class="text-[9px] font-extrabold text-indigo-700">+${dayEvents.length - 2} more</div>`;
+
+        const cell = document.createElement('div');
+        cell.onclick = () => { selectedCalDate = dateStr; renderCalendar(); renderDaySchedule(); };
+        cell.className = `cal-day rounded-xl border border-slate-200 p-1.5 cursor-pointer flex flex-col justify-between bg-white ${isSelected ? 'selected' : ''}`;
+        cell.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-extrabold ${dateStr === TODAY_STR ? 'w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center' : 'text-slate-700'}">${d}</span>
+            ${dayEvents.length ? `<span class="text-[9px] font-bold text-slate-400">${dayEvents.length}</span>` : ''}
+          </div>
+          <div class="space-y-0.5 mt-1">${badgesHtml}</div>
+        `;
+        grid.appendChild(cell);
+      }
+    }
+
+    function renderDaySchedule() {
+      const formattedDate = new Date(selectedCalDate).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('selectedDateHeader').textContent = formattedDate;
+
+      const list = document.getElementById('dayScheduleList');
+      const dayEvents = sfsInvoices.filter(b => b.date === selectedCalDate);
+
+      if (dayEvents.length === 0) {
+        list.innerHTML = `<div class="text-center py-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-xs text-slate-400">या तारखेला कोणताही इव्हेंट बुक नाही.</div>`;
+        return;
+      }
+
+      list.innerHTML = dayEvents.map((ev, idx) => {
+        const isFreelance = ev.type === 'FREELANCE';
+        const title = isFreelance ? `${ev.studioName} (Freelance)` : getClientName(ev.clientId);
+        const paidAmt = ev.payments.reduce((s, p) => s + Number(p.amount), 0);
+        const dueAmt = Math.max(0, Number(ev.totalAmount) - paidAmt);
+
+        const crewList = (ev.crew || []).map(c => {
+          const m = sfsTeam.find(t => t.id === c.memberId);
+          return m ? `
+            <div class="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 text-[11px]">
+              <span class="font-bold text-slate-800"><i class="fas fa-user text-indigo-600 mr-1"></i>${m.name} (₹${c.fee})</span>
+              <button onclick="sendTeamWhatsApp('${ev.id}', '${m.id}')" class="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px] flex items-center gap-1"><i class="fab fa-whatsapp"></i> Duty Link</button>
+            </div>
+          ` : '';
+        }).join('');
+
+        return `
+          <div class="p-3.5 rounded-2xl border ${isFreelance ? 'border-purple-200 bg-purple-50/40' : 'border-indigo-100 bg-indigo-50/30'} space-y-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${isFreelance ? 'bg-purple-600 text-white' : 'bg-indigo-600 text-white'}">Event #${idx + 1} • ${ev.time || 'Full Day'}</span>
+                <h4 class="text-sm font-extrabold text-slate-900 mt-1">${title}</h4>
+                <p class="text-xs font-semibold text-slate-600"><i class="fas fa-map-marker-alt text-rose-500 mr-1"></i>${ev.venue}</p>
+              </div>
+              <div class="flex gap-1">
+                <button onclick="openEditBookingModal('${ev.id}')" class="px-2 py-1 rounded-lg bg-white border border-slate-200 text-indigo-600 hover:bg-indigo-50 text-[11px] font-bold"><i class="fas fa-edit"></i> Edit</button>
+                <button onclick="deleteBooking('${ev.id}')" class="px-2 py-1 rounded-lg bg-white border border-slate-200 text-rose-600 hover:bg-rose-50 text-[11px]"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl p-2.5 border border-slate-200/70 text-[11px] space-y-1">
+              <p class="text-slate-600"><strong>Work:</strong> ${isFreelance ? ev.roleDesc : ev.output}</p>
+              <div class="flex justify-between pt-1 border-t border-slate-100">
+                <span>Total: <strong>₹${Number(ev.totalAmount).toLocaleString('en-IN')}</strong></span>
+                <span class="text-rose-600 font-bold">Shillak: ₹${dueAmt.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+            <div class="space-y-1">
+              <span class="text-[10px] font-bold uppercase text-slate-500">Assigned Team:</span>
+              ${crewList || '<p class="text-[11px] text-slate-400 italic">No team assigned</p>'}
+            </div>
+            ${!isFreelance && dueAmt > 0 ? `
+              <div class="pt-1 flex justify-end">
+                <button onclick="sendClientPaymentWhatsApp('${ev.id}')" class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-[11px] font-bold flex items-center gap-1"><i class="fab fa-whatsapp text-emerald-400"></i> Send Client Payment Link</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderShootsList() {
+      const container = document.getElementById('shootsListContainer');
+      const filter = document.getElementById('shootFilterSelect').value;
+      let shoots = sfsInvoices.filter(b => b.type === 'CLIENT');
+      if (filter === 'DUE') shoots = shoots.filter(b => (b.totalAmount - b.payments.reduce((s, p) => s + Number(p.amount), 0)) > 0);
+      if (filter === 'PAID') shoots = shoots.filter(b => (b.totalAmount - b.payments.reduce((s, p) => s + Number(p.amount), 0)) <= 0);
+
+      container.innerHTML = shoots.map(b => {
+        const clientName = getClientName(b.clientId);
+        const total = Number(b.totalAmount);
+        const paid = b.payments.reduce((s, p) => s + Number(p.amount), 0);
+        const due = Math.max(0, total - paid);
+        const pct = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+        return `
+          <div class="card-surface rounded-2xl p-4 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-bold text-indigo-600 uppercase">${b.date} • ${b.time || ''}</span>
+                <h4 class="text-sm font-extrabold text-slate-900">${clientName}</h4>
+                <p class="text-xs text-slate-500">${b.venue}</p>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button onclick="openEditBookingModal('${b.id}')" class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-bold">Edit</button>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold ${due === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}">${due === 0 ? 'PAID' : 'DUE: ₹' + due.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg"><strong>Output:</strong> ${b.output}</p>
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs font-bold">
+                <span>Total: ₹${total.toLocaleString('en-IN')}</span>
+                <span class="text-emerald-600">Paid: ₹${paid.toLocaleString('en-IN')}</span>
+                <span class="text-rose-600">Shillak: ₹${due.toLocaleString('en-IN')}</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500" style="width:${pct}%"></div></div>
+            </div>
+            <div class="flex gap-2 pt-2 border-t border-slate-100">
+              ${due > 0 ? `<button onclick="openAddPaymentModal('${b.id}')" class="flex-1 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs">+ जमा रक्कम नोंदवा</button>` : `<div class="w-full text-center text-xs font-bold text-emerald-600 py-1">✓ Fully Paid</div>`}
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="col-span-full card-surface rounded-2xl p-8 text-center text-xs text-slate-400">No shoots found.</div>';
+    }
+
+    function renderClientsDirectory() {
+      const grid = document.getElementById('clientProfilesGrid');
+      const q = (document.getElementById('clientSearchBox').value || '').toLowerCase();
+      const filtered = sfsClients.filter(c => c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q)));
+      grid.innerHTML = filtered.map(c => {
+        const cShoots = sfsInvoices.filter(b => b.type === 'CLIENT' && b.clientId === c.id);
+        const total = cShoots.reduce((s, b) => s + Number(b.totalAmount), 0);
+        const paid = cShoots.reduce((s, b) => s + b.payments.reduce((ps, p) => ps + Number(p.amount), 0), 0);
+        const due = Math.max(0, total - paid);
+        return `
+          <div class="card-surface rounded-2xl p-4 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="text-sm font-extrabold text-slate-900">${c.name}</h4>
+                <p class="text-xs text-slate-500"><i class="fab fa-whatsapp text-emerald-600 mr-1"></i>${c.phone || '-'} • ${c.city || ''}</p>
+              </div>
+              <button onclick="openClientProfileModal('${c.id}')" class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-bold">Edit</button>
+            </div>
+            <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center text-xs">
+              <div class="bg-slate-50 p-2 rounded-lg"><strong>₹${total.toLocaleString('en-IN')}</strong></div>
+              <div class="bg-emerald-50/60 p-2 rounded-lg"><strong class="text-emerald-700">₹${paid.toLocaleString('en-IN')}</strong></div>
+              <div class="bg-rose-50/60 p-2 rounded-lg"><strong class="text-rose-700">₹${due.toLocaleString('en-IN')}</strong></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderFreelanceList() {
+      const container = document.getElementById('freelanceShootsContainer');
+      const flList = sfsInvoices.filter(b => b.type === 'FREELANCE');
+      const total = flList.reduce((s, b) => s + Number(b.totalAmount), 0);
+      const paid = flList.reduce((s, b) => s + b.payments.reduce((ps, p) => ps + Number(p.amount), 0), 0);
+      document.getElementById('flStatTotal').textContent = '₹' + total.toLocaleString('en-IN');
+      document.getElementById('flStatPaid').textContent = '₹' + paid.toLocaleString('en-IN');
+      document.getElementById('flStatDue').textContent = '₹' + Math.max(0, total - paid).toLocaleString('en-IN');
+
+      container.innerHTML = flList.map(b => {
+        const bTotal = Number(b.totalAmount);
+        const bPaid = b.payments.reduce((s, p) => s + Number(p.amount), 0);
+        const bDue = Math.max(0, bTotal - bPaid);
+        return `
+          <div class="card-surface rounded-2xl p-4 space-y-3 border-l-4 border-l-purple-600">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-bold text-purple-600 uppercase">${b.date}</span>
+                <h4 class="text-sm font-extrabold text-slate-900">${b.studioName}</h4>
+                <p class="text-xs text-slate-500">${b.roleDesc} • ${b.venue}</p>
+              </div>
+              <button onclick="openEditBookingModal('${b.id}')" class="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-bold">Edit</button>
+            </div>
+            <div class="flex justify-between text-xs font-bold bg-slate-50 p-2.5 rounded-xl">
+              <span>Fee: ₹${bTotal.toLocaleString('en-IN')}</span>
+              <span class="text-emerald-600">Received: ₹${bPaid.toLocaleString('en-IN')}</span>
+              <span class="text-rose-600">Pending: ₹${bDue.toLocaleString('en-IN')}</span>
+            </div>
+            ${bDue > 0 ? `<button onclick="openAddPaymentModal('${b.id}')" class="w-full py-2 rounded-xl bg-purple-600 text-white font-bold text-xs">+ मिळालेली रक्कम नोंदवा</button>` : ''}
+          </div>
+        `;
+      }).join('') || '<div class="col-span-full card-surface rounded-2xl p-8 text-center text-xs text-slate-400">No freelance shoots recorded.</div>';
+    }
+
+    function addTeamAccount() {
+      const name = document.getElementById('newTeamName').value.trim();
+      const phone = document.getElementById('newTeamPhone').value.trim();
+      const id = document.getElementById('newTeamId').value.trim();
+      const pass = document.getElementById('newTeamPass').value.trim();
+      if (!name || !id || !pass) { alert('Fill required fields'); return; }
+      sfsTeam.push({ id, pass, name, phone });
+      persistAll();
+      document.getElementById('newTeamName').value = '';
+      document.getElementById('newTeamPhone').value = '';
+      document.getElementById('newTeamId').value = '';
+      document.getElementById('newTeamPass').value = '';
+      renderTeamTab();
+    }
+
+    function renderTeamTab() {
+      const box = document.getElementById('teamListBox');
+      box.innerHTML = sfsTeam.map(m => {
+        let shootsCount = 0; let earned = 0;
+        sfsInvoices.forEach(b => {
+          const found = (b.crew || []).find(c => c.memberId === m.id);
+          if (found) { shootsCount++; earned += Number(found.fee || 0); }
+        });
+        const paid = sfsTeamPayouts.filter(p => p.memberId === m.id).reduce((s, p) => s + Number(p.amount), 0);
+        const due = Math.max(0, earned - paid);
+        return `
+          <div class="card-surface rounded-2xl p-4 space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="text-sm font-extrabold text-slate-900">${m.name}</h4>
+                <p class="text-[11px] text-slate-500">ID: <strong class="text-indigo-600">${m.id}</strong> | Pass: <strong>${m.pass}</strong></p>
+              </div>
+              <button onclick="openPayTeamModal('${m.id}')" class="px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-[11px] font-bold">+ Pay</button>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-center text-xs bg-slate-50 p-2.5 rounded-xl">
+              <div><strong>${shootsCount}</strong></div>
+              <div><strong>₹${earned.toLocaleString('en-IN')}</strong></div>
+              <div><strong class="text-emerald-600">₹${paid.toLocaleString('en-IN')}</strong></div>
+              <div><strong class="text-rose-600">₹${due.toLocaleString('en-IN')}</strong></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderTeamPortal() {
+      const mId = currentSession.id;
+      const member = sfsTeam.find(w => w.id === mId);
+      if (!member) return;
+      document.getElementById('tpMemberGreeting').textContent = member.name;
+      let myShoots = []; let earned = 0;
+      sfsInvoices.forEach(b => {
+        const c = (b.crew || []).find(x => x.memberId === mId);
+        if (c) { myShoots.push({ ...b, myFee: Number(c.fee || 0) }); earned += Number(c.fee || 0); }
+      });
+      const myPayouts = sfsTeamPayouts.filter(p => p.memberId === mId);
+      const paid = myPayouts.reduce((s, p) => s + Number(p.amount), 0);
+      document.getElementById('tpTotalEarned').textContent = '₹' + earned.toLocaleString('en-IN');
+      document.getElementById('tpTotalPaid').textContent = '₹' + paid.toLocaleString('en-IN');
+      document.getElementById('tpTotalDue').textContent = '₹' + Math.max(0, earned - paid).toLocaleString('en-IN');
+      document.getElementById('tpScheduleCards').innerHTML = myShoots.map(b => {
+        const title = b.type === 'FREELANCE' ? b.studioName : getClientName(b.clientId);
+        return `
+          <div class="card-surface rounded-2xl p-4 space-y-2 border-l-4 border-l-indigo-600">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-extrabold">${b.date} • ${b.time || 'Full Day'}</span>
+                <h4 class="text-sm font-extrabold text-slate-900 mt-1">${title}</h4>
+                <p class="text-xs text-slate-600">${b.venue}</p>
+              </div>
+              <strong class="text-sm font-extrabold text-emerald-700">₹${b.myFee.toLocaleString('en-IN')}</strong>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="card-surface rounded-2xl p-6 text-center text-xs text-slate-400">No shoots assigned.</div>';
+    }
+
+    function sendClientPaymentWhatsApp(bookingId) {
+      const b = sfsInvoices.find(x => x.id === bookingId);
+      if (!b) return;
+      const client = sfsClients.find(c => c.id === b.clientId) || { name: 'Client', phone: '' };
+      const paid = b.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const due = Math.max(0, Number(b.totalAmount) - paid);
+      const baseUrl = window.location.origin + window.location.pathname;
+      const payUrl = `${baseUrl}#pay?id=${b.id}&to=${encodeURIComponent(client.name)}&amt=${due}&desc=${encodeURIComponent(b.venue)}`;
+      const msg = `*SUJAL FILMS STORIES — Payment Link*\n\nनमस्कार ${client.name},\nEvent: *${b.venue}* (${b.date})\nTotal: ₹${Number(b.totalAmount).toLocaleString('en-IN')}\nPaid: ₹${paid.toLocaleString('en-IN')}\n*Shillak Balance: ₹${due.toLocaleString('en-IN')}*\n\nपेमेंट करण्यासाठी लिंक उघडा:\n${payUrl}`;
+      openWhatsApp(client.phone, msg);
+    }
+
+    function sendTeamWhatsApp(bookingId, memberId) {
+      const b = sfsInvoices.find(x => x.id === bookingId);
+      const member = sfsTeam.find(w => w.id === memberId);
+      if (!b || !member) return;
+      const crewEntry = (b.crew || []).find(c => c.memberId === memberId);
+      const title = b.type === 'FREELANCE' ? b.studioName : getClientName(b.clientId);
+      const baseUrl = window.location.origin + window.location.pathname;
+      const teamUrl = `${baseUrl}#team?id=${encodeURIComponent(member.id)}`;
+      const msg = `*SUJAL FILMS STORIES — Shoot Duty*\n\nनमस्कार *${member.name}*,\nDate: ${b.date} (${b.time || 'Full Day'})\nVenue: ${b.venue} (${title})\nFee: ₹${Number(crewEntry?.fee || 0).toLocaleString('en-IN')}\n\nPortal Link:\n${teamUrl}\n(ID: ${member.id} | Pass: ${member.pass})`;
+      openWhatsApp(member.phone, msg);
+    }
+
+    function openWhatsApp(phone, text) {
+      const clean = (phone || '').replace(/\D/g, '');
+      const url = clean.length >= 10 ? `https://api.whatsapp.com/send?phone=91${clean.slice(-10)}&text=${encodeURIComponent(text)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    }
+
+    function launchDirectUpi(app) {
+      if (!window.activeUpiData) return;
+      const { amt, id } = window.activeUpiData;
+      const q = `pa=${sfsConfig.upiId}&pn=${encodeURIComponent('Sujal Films Stories')}&am=${amt}&cu=INR&tn=${encodeURIComponent(id)}`;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      let url = `upi://pay?${q}`;
+      if (app === 'phonepe') url = isIOS ? `phonepe://pay?${q}` : `intent://pay?${q}#Intent;scheme=upi;package=com.phonepe.app;end`;
+      if (app === 'gpay') url = isIOS ? `gpay://upi/pay?${q}` : `intent://pay?${q}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+      if (app === 'paytm') url = isIOS ? `paytmmp://pay?${q}` : `intent://pay?${q}#Intent;scheme=upi;package=net.one97.paytm;end`;
+      window.location.href = url;
+      setTimeout(() => { window.location.href = `upi://pay?${q}`; }, 1200);
+    }
+
+    function renderMultiTeamChecklist(selectedCrew = []) {
+      const box = document.getElementById('multiTeamChecklist');
+      box.innerHTML = sfsTeam.map(m => {
+        const existing = selectedCrew.find(c => c.memberId === m.id);
+        return `
+          <div class="flex items-center justify-between gap-2 bg-white p-2 rounded-xl border border-slate-200">
+            <label class="flex items-center gap-2 text-xs font-bold text-slate-800 cursor-pointer flex-1">
+              <input type="checkbox" class="team-chk rounded text-indigo-600" data-member-id="${m.id}" ${existing ? 'checked' : ''}>
+              <span>${m.name}</span>
+            </label>
+            <input type="number" class="team-fee-input w-24 px-2 py-1 bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold" data-member-id="${m.id}" value="${existing ? existing.fee : ''}" placeholder="Fee ₹">
+          </div>
+        `;
+      }).join('') || '<p class="text-xs text-slate-400">No team members added.</p>';
+    }
+
+    function openBookingModal(dateOverride = null, mode = 'CLIENT') {
+      document.getElementById('modalBooking').classList.remove('hidden');
+      document.getElementById('modalBookingTitle').textContent = 'Book Date & Event Schedule';
+      document.getElementById('editBookingId').value = '';
+      document.getElementById('advanceInputWrapper').classList.remove('hidden');
+      setBookingMode(mode);
+      document.getElementById('bkEventDate').value = dateOverride || selectedCalDate || TODAY_STR;
+      document.getElementById('bkEventTime').value = '';
+      document.getElementById('bkEventVenue').value = '';
+      document.getElementById('bkOutputDetails').value = '';
+      document.getElementById('bkTotalAmount').value = '';
+      document.getElementById('bkAdvanceAmount').value = '0';
+      document.getElementById('bkClientSelect').innerHTML = sfsClients.map(c => `<option value="${c.id}">${c.name} (${c.phone})</option>`).join('');
+      renderMultiTeamChecklist([]);
+    }
+
+    function openEditBookingModal(bookingId) {
+      const b = sfsInvoices.find(x => x.id === bookingId);
+      if (!b) return;
+      document.getElementById('modalBooking').classList.remove('hidden');
+      document.getElementById('modalBookingTitle').textContent = 'Edit Shoot Details';
+      document.getElementById('editBookingId').value = b.id;
+      document.getElementById('advanceInputWrapper').classList.add('hidden');
+      setBookingMode(b.type);
+      document.getElementById('bkClientSelect').innerHTML = sfsClients.map(c => `<option value="${c.id}">${c.name} (${c.phone})</option>`).join('');
+      if (b.type === 'CLIENT') {
+        document.getElementById('bkClientSelect').value = b.clientId;
+        document.getElementById('bkOutputDetails').value = b.output || '';
+      } else {
+        document.getElementById('flStudioName').value = b.studioName || '';
+        document.getElementById('flStudioPhone').value = b.studioPhone || '';
+        document.getElementById('flRoleDesc').value = b.roleDesc || '';
+      }
+      document.getElementById('bkEventDate').value = b.date;
+      document.getElementById('bkEventTime').value = b.time || '';
+      document.getElementById('bkEventVenue').value = b.venue || '';
+      document.getElementById('bkTotalAmount').value = b.totalAmount;
+      renderMultiTeamChecklist(b.crew || []);
+    }
+
+    function setBookingMode(mode) {
+      document.getElementById('bookingModeInput').value = mode;
+      const isClient = mode === 'CLIENT';
+      document.getElementById('clientModeFields').classList.toggle('hidden', !isClient);
+      document.getElementById('freelanceModeFields').classList.toggle('hidden', isClient);
+      document.getElementById('modeBtnClient').className = isClient ? 'py-2 rounded-lg text-xs font-extrabold bg-indigo-600 text-white' : 'py-2 rounded-lg text-xs font-extrabold text-slate-600';
+      document.getElementById('modeBtnFreelance').className = !isClient ? 'py-2 rounded-lg text-xs font-extrabold bg-purple-600 text-white' : 'py-2 rounded-lg text-xs font-extrabold text-slate-600';
+    }
+
+    let isInlineClientOpen = false;
+    function toggleNewClientInline() {
+      isInlineClientOpen = !isInlineClientOpen;
+      document.getElementById('newClientInlineBox').classList.toggle('hidden', !isInlineClientOpen);
+      document.getElementById('btnNewClientInline').textContent = isInlineClientOpen ? 'Cancel' : '+ New Client';
+    }
+
+    function saveBookingEvent() {
+      const editId = document.getElementById('editBookingId').value;
+      const mode = document.getElementById('bookingModeInput').value;
+      const date = document.getElementById('bkEventDate').value;
+      const time = document.getElementById('bkEventTime').value.trim();
+      const venue = document.getElementById('bkEventVenue').value.trim();
+      const totalAmount = parseFloat(document.getElementById('bkTotalAmount').value);
+
+      if (!date || !venue || isNaN(totalAmount) || totalAmount <= 0) { alert('कृपया तारीख, लोकेशन आणि Total Amount भरा.'); return; }
+
+      const crew = [];
+      document.querySelectorAll('.team-chk:checked').forEach(chk => {
+        const mId = chk.getAttribute('data-member-id');
+        const feeInput = document.querySelector(`.team-fee-input[data-member-id="${mId}"]`);
+        const fee = parseFloat(feeInput?.value) || 0;
+        crew.push({ memberId: mId, fee });
+      });
+
+      if (editId) {
+        const existing = sfsInvoices.find(x => x.id === editId);
+        if (existing) {
+          existing.type = mode; existing.date = date; existing.time = time; existing.venue = venue; existing.totalAmount = totalAmount; existing.crew = crew;
+          if (mode === 'CLIENT') {
+            existing.clientId = document.getElementById('bkClientSelect').value;
+            existing.output = document.getElementById('bkOutputDetails').value.trim();
+          } else {
+            existing.studioName = document.getElementById('flStudioName').value.trim();
+            existing.studioPhone = document.getElementById('flStudioPhone').value.trim();
+            existing.roleDesc = document.getElementById('flRoleDesc').value.trim();
+          }
+        }
+      } else {
+        const advanceAmount = parseFloat(document.getElementById('bkAdvanceAmount').value) || 0;
+        const payments = advanceAmount > 0 ? [{ amount: advanceAmount, date: TODAY_STR, mode: 'Advance' }] : [];
+        if (mode === 'CLIENT') {
+          let clientId = document.getElementById('bkClientSelect').value;
+          if (isInlineClientOpen) {
+            const nName = document.getElementById('bkNewClientName').value.trim();
+            const nPhone = document.getElementById('bkNewClientPhone').value.trim();
+            const nCity = document.getElementById('bkNewClientCity').value.trim();
+            if (!nName) { alert('नवीन क्लायंटचे नाव टाका.'); return; }
+            const newC = { id: 'CLI-' + Date.now().toString().slice(-4), name: nName, phone: nPhone, city: nCity };
+            sfsClients.push(newC);
+            clientId = newC.id;
+            isInlineClientOpen = false;
+          }
+          const output = document.getElementById('bkOutputDetails').value.trim() || 'Photography & Film Coverage';
+          sfsInvoices.push({ id: 'BK-' + Date.now().toString().slice(-4), type: 'CLIENT', clientId, date, time, venue, output, totalAmount, payments, crew });
+        } else {
+          const studioName = document.getElementById('flStudioName').value.trim();
+          const studioPhone = document.getElementById('flStudioPhone').value.trim();
+          const roleDesc = document.getElementById('flRoleDesc').value.trim() || 'Freelance Shoot';
+          sfsInvoices.push({ id: 'FL-' + Date.now().toString().slice(-4), type: 'FREELANCE', studioName, studioPhone, roleDesc, date, time, venue, totalAmount, payments, crew });
+        }
+      }
+      selectedCalDate = date;
+      persistAll();
+      closeModal('modalBooking');
+      refreshActiveView();
+    }
+
+    function deleteBooking(id) {
+      if (confirm('हा इव्हेंट डिलीट करायचा आहे का?')) {
+        sfsInvoices = sfsInvoices.filter(b => b.id !== id);
+        persistAll();
+        refreshActiveView();
+      }
+    }
+
+    function openAddPaymentModal(id) {
+      const b = sfsInvoices.find(x => x.id === id);
+      if (!b) return;
+      const paid = b.payments.reduce((s, p) => s + Number(p.amount), 0);
+      const due = Math.max(0, Number(b.totalAmount) - paid);
+      document.getElementById('payTargetId').value = id;
+      document.getElementById('payModalTitle').textContent = b.type === 'FREELANCE' ? b.studioName : `${getClientName(b.clientId)} — ${b.venue}`;
+      document.getElementById('payModalRemaining').textContent = '₹' + due.toLocaleString('en-IN');
+      document.getElementById('payNewAmount').value = '';
+      document.getElementById('modalAddPayment').classList.remove('hidden');
+    }
+
+    function confirmInstallmentPayment() {
+      const id = document.getElementById('payTargetId').value;
+      const amt = parseFloat(document.getElementById('payNewAmount').value);
+      if (isNaN(amt) || amt <= 0) { alert('योग्य रक्कम टाका.'); return; }
+      const b = sfsInvoices.find(x => x.id === id);
+      if (b) {
+        b.payments.push({ amount: amt, date: TODAY_STR, mode: 'UPI / Cash' });
+        persistAll();
+        closeModal('modalAddPayment');
+        refreshActiveView();
+      }
+    }
+
+    function openPayTeamModal(memberId) {
+      const m = sfsTeam.find(x => x.id === memberId);
+      if (!m) return;
+      document.getElementById('ptMemberId').value = m.id;
+      document.getElementById('ptMemberName').textContent = m.name;
+      document.getElementById('ptAmountInput').value = '';
+      document.getElementById('ptNoteInput').value = '';
+      document.getElementById('modalPayTeam').classList.remove('hidden');
+    }
+
+    function saveTeamPayout() {
+      const memberId = document.getElementById('ptMemberId').value;
+      const amount = parseFloat(document.getElementById('ptAmountInput').value);
+      const note = document.getElementById('ptNoteInput').value.trim() || 'Shoot Payout';
+      if (isNaN(amount) || amount <= 0) { alert('रक्कम टाका.'); return; }
+      sfsTeamPayouts.push({ id: 'TP-' + Date.now(), memberId, amount, date: TODAY_STR, note });
+      persistAll();
+      closeModal('modalPayTeam');
+      refreshActiveView();
+    }
+
+    function openClientProfileModal(editId = null) {
+      document.getElementById('modalClientProfile').classList.remove('hidden');
+      if (editId) {
+        const c = sfsClients.find(x => x.id === editId);
+        document.getElementById('cpEditId').value = c.id;
+        document.getElementById('cpNameInput').value = c.name;
+        document.getElementById('cpPhoneInput').value = c.phone || '';
+        document.getElementById('cpCityInput').value = c.city || '';
+      } else {
+        document.getElementById('cpEditId').value = '';
+        document.getElementById('cpNameInput').value = '';
+        document.getElementById('cpPhoneInput').value = '';
+        document.getElementById('cpCityInput').value = '';
+      }
+    }
+
+    function saveClientProfile() {
+      const id = document.getElementById('cpEditId').value;
+      const name = document.getElementById('cpNameInput').value.trim();
+      const phone = document.getElementById('cpPhoneInput').value.trim();
+      const city = document.getElementById('cpCityInput').value.trim();
+      if (!name) { alert('नाव टाका.'); return; }
+      if (id) {
+        const c = sfsClients.find(x => x.id === id);
+        if (c) { c.name = name; c.phone = phone; c.city = city; }
+      } else {
+        sfsClients.push({ id: 'CLI-' + Date.now().toString().slice(-4), name, phone, city });
+      }
+      persistAll();
+      closeModal('modalClientProfile');
+      refreshActiveView();
+    }
+
+    function saveStudioSettings() {
+      const pin = document.getElementById('settingsPinInput').value.trim();
+      if (pin !== sfsConfig.pin) { alert('Invalid PIN! Default is 1234'); return; }
+      const upi = document.getElementById('studioUpiInput').value.trim();
+      if (upi) sfsConfig.upiId = upi;
+      persistAll();
+      alert('Studio UPI Saved!');
+    }
+
+    function downloadBackupJson() {
+      const blob = new Blob([JSON.stringify({ sfsConfig, sfsClients, sfsInvoices, sfsTeam, sfsTeamPayouts }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Sujal_Films_Backup_${TODAY_STR}.json`;
+      a.click();
+    }
+
+    function restoreBackupJson(ev) {
+      const file = ev.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const d = JSON.parse(e.target.result);
+          if (d.sfsConfig) sfsConfig = d.sfsConfig;
+          if (d.sfsClients) sfsClients = d.sfsClients;
+          if (d.sfsInvoices) sfsInvoices = d.sfsInvoices;
+          if (d.sfsTeam) sfsTeam = d.sfsTeam;
+          if (d.sfsTeamPayouts) sfsTeamPayouts = d.sfsTeamPayouts;
+          persistAll();
+          renderBrandLogoSlots();
+          refreshActiveView();
+          alert('Backup Restored Successfully!');
+        } catch (err) { alert('Invalid Backup File!'); }
+      };
+      reader.readAsText(file);
+    }
+
+    function getClientName(clientId) {
+      const c = sfsClients.find(x => x.id === clientId);
+      return c ? c.name : 'Client';
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+  </script>
+</body>
+</html>
